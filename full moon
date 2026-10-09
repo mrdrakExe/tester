@@ -1,0 +1,49 @@
+-- فك تشفير النص الأساسي وتجميع الثوابت:
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+local LocalPlayer = Players.LocalPlayer
+
+-- فحص النظام وحساب المتغيرات المحدثة
+local key_system = {
+    Enabled = true,
+    Verified = false,
+    HardwareID = gethwid and gethwid() or "Unknown_HWID"
+}
+
+-- التحقق من صلاحية الجلسة أو المفتاح عبر الطلبات الخارجية
+local function VerifyUserKey(userKey)
+    if not userKey or userKey == "" then
+        return false
+    end
+    
+    -- يتم إنشاء طلب HTTP مخصص للتحقق من السيرفر
+    local response = request({
+        Url = "https://api.key-system-provider.com/v1/verify",
+        Method = "POST",
+        Headers = {
+            ["Content-Type"] = "application/json"
+        },
+        Body = HttpService:JSONEncode({
+            key = userKey,
+            hwid = key_system.HardwareID,
+            player_id = LocalPlayer.UserId
+        })
+    })
+
+    if response and response.StatusCode == 200 then
+        local data = HttpService:JSONDecode(response.Body)
+        if data.success then
+            key_system.Verified = true
+            return true
+        end
+    end
+    return false
+end
+
+-- تنفيذ السكريبت الأساسي عند نجاح التحقق
+if key_system.Verified then
+    print("[Success] Key verified! Loading main script...")
+    -- هنا يتم تحميل السكريبت الأصلي (Main Loader)
+else
+    warn("[Error] Invalid or Expired Key.")
+end
